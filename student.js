@@ -1,8 +1,6 @@
 var selectedRow = null;
-// Global variable to keep track of the currently selected row
 var selectedRow = null;
 
-// Function that gets called when the form is submitted
 function resetForm() {
     document.getElementById("username").value = "";
     document.getElementById("rollNo").value = "";
@@ -12,9 +10,7 @@ function resetForm() {
     selectedRow = null;
 }
 function onFormSubmit(){
-    // Validate the form inputs first
     if(validate()){
-        // Read the form data and check whether we're inserting a new record or updating an existing one
         var formData = readFormData();
         if(selectedRow == null){
             insertNewRecord(formData);
@@ -22,15 +18,13 @@ function onFormSubmit(){
         else{
             updateRecord(formData);
         }
-        // Reset the form after submitting
         resetForm();
     }
 }
 
-// Function that reads the form data and returns it as an object
 function readFormData(){
     var formData = {};
-    formData["username"] = document.getElementById("username").value; // changed here
+    formData["username"] = document.getElementById("username").value; 
     formData["rollNo"] = document.getElementById("rollNo").value;
     formData["stdClass"] = document.getElementById("stdClass").value;
     formData["tnum"] = document.getElementById("tnum").value;
@@ -42,7 +36,7 @@ function insertNewRecord(data){
     var table = document.getElementById("stdlist").getElementsByTagName("tbody")[0];
     var newRow = table.insertRow(table.length);
     cell1 = newRow.insertCell(0);
-    cell1.innerHTML = data.username; // changed here
+    cell1.innerHTML = data.username; 
     cell1 = newRow.insertCell(1);
     cell1.innerHTML = data.rollNo;
     cell1 = newRow.insertCell(2);
@@ -57,7 +51,7 @@ function insertNewRecord(data){
 
 function onEdit(td){
     selectedRow = td.parentElement.parentElement;
-    document.getElementById("username").value = selectedRow.cells[0].innerHTML; // changed here
+    document.getElementById("username").value = selectedRow.cells[0].innerHTML; 
     document.getElementById("rollNo").value = selectedRow.cells[1].innerHTML;
     document.getElementById("stdClass").value = selectedRow.cells[2].innerHTML;
     document.getElementById("tnum").value = selectedRow.cells[3].innerHTML;
@@ -65,16 +59,14 @@ function onEdit(td){
 }
 
 function updateRecord(formData){
-    selectedRow.cells[0].innerHTML = formData.username; // changed here
+    selectedRow.cells[0].innerHTML = formData.username; 
     selectedRow.cells[1].innerHTML = formData.rollNo;
     selectedRow.cells[2].innerHTML = formData.stdClass;
     selectedRow.cells[3].innerHTML = formData.tnum;
     selectedRow.cells[4].innerHTML = formData.age;
 }
 
-// Function that gets called when the Delete button is clicked
 function onDelete(td){
-    // Confirm with the user that they really want to delete the selected record
     if(confirm('Are you sure to delete this record ?')){
         row = td.parentElement.parentElement;
         document.getElementById("stdlist").deleteRow(row.rowIndex);
@@ -86,7 +78,6 @@ function onDelete(td){
 function validate(){
     var isValid = true;
 
-    // Check "username"
     if(document.getElementById("username").value ==""){
         isValid = false;
         document.getElementById("userNamevalidationError").classList.remove("hide");
@@ -97,7 +88,6 @@ function validate(){
         }
     }
 
-    // Check "rollNo"
     if(document.getElementById("rollNo").value ==""){
         isValid = false;
         document.getElementById("rollNovalidationError").classList.remove("hide");
@@ -108,7 +98,6 @@ function validate(){
         }
     }
 
-    // Check "stdClass"
     if(document.getElementById("stdClass").value ==""){
         isValid = false;
         document.getElementById("stdClassvalidationError").classList.remove("hide");
@@ -119,7 +108,6 @@ function validate(){
         }
     }
 
-    // Check "tnum"
     if(document.getElementById("tnum").value ==""){
         isValid = false;
         document.getElementById("tnumvalidationError").classList.remove("hide");
@@ -130,7 +118,6 @@ function validate(){
         }
     }
 
-    // Check "age"
     if(document.getElementById("age").value ==""){
         isValid = false;
         document.getElementById("agevalidationError").classList.remove("hide");
