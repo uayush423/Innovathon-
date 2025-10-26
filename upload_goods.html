@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Goods Details - UTI</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    
+    <link rel="stylesheet" 
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    
+    <style>
+        /* Base styling for form fields (Adjust these or move to style.css) */
+        .form-container { max-width: 600px; margin: 50px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        h2 { text-align: center; color: #333; }
+        
+        /* Autocomplete-specific styles */
+        .search-container {
+            position: relative; /* CRITICAL: Allows results to be positioned absolutely below the input */
+        }
+        .autocomplete-results {
+            border: 1px solid #ccc;
+            border-top: none;
+            max-height: 150px;
+            overflow-y: auto;
+            position: absolute; 
+            top: 100%; /* Position right below the input */
+            left: 0;
+            z-index: 1000;      /* Ensure it appears above everything else */
+            width: 100%;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .search-result-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .search-result-item:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>📦 Upload Goods Details</h2>
+    
+    <form action="/submit_goods" method="POST">
+        
+        <div class="form-group search-container">
+            <label for="origin-search">Origin:</label>
+            <input type="text" id="origin-search" name="origin" placeholder="Start typing location..." required>
+            <ul id="origin-results" class="autocomplete-results"></ul> 
+        </div>
+
+        <div class="form-group search-container">
+            <label for="dest-search">Destination:</label>
+            <input type="text" id="dest-search" name="destination" placeholder="Enter final destination" required>
+            <ul id="dest-results" class="autocomplete-results"></ul>
+        </div>
+        
+        <div class="form-group">
+            <label for="load-type">Load Type:</label>
+            <select id="load-type" name="load_type" required>
+                <option value="">-- Select Load Type --</option>
+                <option value="perishables">Perishables</option>
+                <option value="electronics">Electronics</option>
+                </select>
+        </div>
+
+        <div class="form-group">
+            <label for="load-weight">Load Weight (in Tons):</label>
+            <input type="number" id="load-weight" name="load_weight" placeholder="e.g., 10" required min="1">
+        </div>
+
+        <div class="form-group">
+            <label for="expected-date">Expected Date:</label>
+            <input type="date" id="expected-date" name="expected_date" placeholder="dd-mm-yyyy" required>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Submit Details</button>
+    </form>
+</div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+<script>
+    // This function handles the real-time search for location names
+    function setupAutocomplete(inputId, resultsId) {
+        const input = document.getElementById(inputId);
+        const resultsContainer = document.getElementById(resultsId);
+        // Nominatim is the free, OpenStreetMap-based geocoding service
+        const geocoderURL = 'https://nominatim.openstreetmap.org/search?format=json&limit=5&q=';
+        
+        // Listen for typing events
+        input.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            // Start searching only after 2 characters for performance
+            if (query.length < 2) {
+                resultsContainer.innerHTML = '';
+                return;
+            }
+
+            // Fetch results from Nominatim
+            fetch(geocoderURL + encodeURIComponent(query))
+                .then(response => response.json())
+                .then(data => {
+                    resultsContainer.innerHTML = ''; // Clear old results
+                    
+                    data.forEach(result => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'search-result-item';
+                        // The text to show in the dropdown
+                        listItem.textContent = result.display_name;
+                        
+                        // Action when a suggestion is clicked
+                        listItem.addEventListener('click', () => {
+                            // Fill the input box with the full location name
+                            input.value = result.display_name;
+                            // Hide the suggestions
+                            resultsContainer.innerHTML = '';
+                            
+                            // OPTIONAL: You can save the lat/lon (result.lat, result.lon) 
+                            // here to pass the exact coordinates to your server.
+                        });
+                        resultsContainer.appendChild(listItem);
+                    });
+                })
+                .catch(error => console.error('Geocoding error:', error));
+        });
+
+        // Hide suggestions if the user clicks anywhere else on the page
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !resultsContainer.contains(e.target)) {
+                resultsContainer.innerHTML = '';
+            }
+        });
+    }
+
+    // Initialize the autocomplete for both fields
+    setupAutocomplete('origin-search', 'origin-results');
+    setupAutocomplete('dest-search', 'dest-results');
+</script>
+
+</body>
+</html>

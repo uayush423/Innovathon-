@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register | Unified Transport Interface</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}" />
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <h1>UTI</h1>
+      <p>Unified Transport Interface</p>
+    </div>
+  </header>
+
+  <main class="login-section">
+    <div class="login-card">
+      <h2>Create Your UTI Account</h2>
+      <p>Select your role to get started</p>
+      
+      <form id="registerForm" action="{{ url_for('register') }}" method="POST">
+
+        <div class="role-buttons">
+          <button type="button" class="role-btn" data-role="driver"> Driver</button>
+          <button type="button" class="role-btn" data-role="truck_owner"> Truck Owner</button>
+          <button type="button" class="role-btn" data-role="sender"> Sender</button>
+          <button type="button" class="role-btn" data-role="receiver"> Receiver</button>
+        </div>
+
+        <input type="hidden" name="role" id="selectedRole" required />
+        
+        <input type="text" name="username" placeholder="Email or Mobile Number" required />
+        <input type="password" name="password" placeholder="Create a Password" required />
+        
+        <button type="submit" class="btn-primary">Create Account</button>
+      </form>
+      <p class="register-text">Already have an account? <a href="{{ url_for('login') }}">Sign In Here</a></p>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 Unified Transport Interface</p>
+  </footer>
+
+  <script>
+    const roleButtons = document.querySelectorAll('.role-btn');
+    const selectedRoleInput = document.getElementById('selectedRole');
+    const registerForm = document.getElementById('registerForm');
+
+    roleButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        // Remove 'active' class from all buttons
+        roleButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // Add 'active' class to the clicked button
+        button.classList.add('active');
+        
+        // Set the value of the hidden input
+        selectedRoleInput.value = button.dataset.role;
+      });
+    });
+
+    // Optional: Check that a role was selected before submitting
+    registerForm.addEventListener('submit', (e) => {
+        if (!selectedRoleInput.value) {
+            e.preventDefault(); // Stop the form from submitting
+            alert('Please select your role!');
+        }
+    });
+  </script>
+
+</body>
+</html>

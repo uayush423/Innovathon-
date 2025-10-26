@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truck Owner Dashboard | UTI</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sender.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* Styles from previous version */
+        body { background: linear-gradient(to bottom right, #f0f4f8, #d9e2ec); color: #333; font-family: sans-serif; margin: 0;}
+        header { background: linear-gradient(90deg, #3a7bd5, #00d2ff); color: white; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 1000;}
+        .logo h1 { margin: 0; font-size: 1.5em; } .logo p { margin: 0; font-size: 0.8em; color: #eee; }
+        nav a { color: white; text-decoration: none; margin: 0 15px; padding: 5px 0; }
+        nav a.active, nav a:hover { border-bottom: 2px solid white; }
+        main { padding: 80px 30px 20px 30px; max-width: 1400px; margin: 0 auto;}
+        footer { text-align: center; padding: 15px; margin-top: 30px; background-color: #eee; font-size: 0.9em; color: #555; border-top: 1px solid #ccc; }
+        .hero { text-align: center; margin-bottom: 30px; padding: 20px; background: rgba(255, 255, 255, 0.5); border-radius: 10px;}
+        .panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); margin-bottom: 30px; border: 1px solid rgba(0,0,0,0.1); padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .panel h3 { color: #1a237e; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 15px; display: flex; align-items: center;}
+        .panel h3 i { margin-right: 10px; }
+        .load-table-container { overflow-x: auto; }
+        .load-table-container table { width: 100%; border-collapse: collapse; background-color: transparent; table-layout: fixed;}
+        .load-table-container th { background-color: rgba(58, 123, 213, 0.1); color: #1a237e; border: 1px solid #ddd; padding: 10px 12px; text-align: left; font-size: 0.9em; }
+        .load-table-container td { color: #333; border: 1px solid #ddd; padding: 10px 12px; vertical-align: top; word-wrap: break-word; font-size: 0.9em; }
+        .load-table-container tr:nth-child(even) { background-color: rgba(0, 0, 0, 0.03); }
+        .load-table-container td ul { font-size: 0.85em; margin: 0; padding-left: 18px; list-style: disc;}
+        .status-assigned { color: #28a745; font-weight: bold; } .status-intransit { color: #007bff; font-weight: bold; }
+        .status-delivered { color: #6c757d; } .status-canceled { color: #dc3545; font-weight: bold;}
+        .price-col { text-align: right; padding-right: 15px !important; }
+        .paid-status { color: #28a745; font-weight: bold; } .unpaid-status { color: #dc3545; font-weight: bold; }
+        #map { height: 400px; border-radius: 10px; margin-top: 20px; border: 1px solid #ccc; }
+        .track-form { display: flex; gap: 10px; margin-bottom: 20px; }
+        .track-form input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .track-form .btn { padding: 10px 15px; background-color: #3a7bd5; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .track-form .btn:hover { background-color: #2a5a9d; }
+        #trackInfo { margin-top: 15px; display: none; background: #e0eaff; padding: 15px; border-radius: 8px; border: 1px solid #b3cfff;}
+        #trackInfo p { margin: 6px 0; color: #1a237e; font-size: 0.95em;} #trackInfo strong { color: #0d47a1; font-weight: 600; }
+        .btn-outline { background: white; color: #3a7bd5; border: 1px solid #3a7bd5; padding: 5px 10px; border-radius: 5px; text-decoration: none; cursor: pointer; transition: all 0.2s ease;}
+        .btn-outline:hover { background: #3a7bd5; color: white; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo"><h1>UTI</h1><p>Truck Owner Portal</p></div>
+        <nav>
+            <a href="{{ url_for('truck_owner_dashboard') }}" class="active">Dashboard</a>
+            <a href="{{ url_for('load_matching') }}">Find Loads</a>
+            <a href="{{ url_for('contact') }}">Support</a>
+        </nav>
+        <a href="{{ url_for('logout') }}" class="btn-outline">Logout</a>
+    </header>
+    <main>
+        <section class="hero">
+            <h2>Welcome, Truck Owner {{ current_user.username }}</h2>
+            <p>Oversee system operations and track shipments.</p>
+        </section>
+        <section class="panel">
+            <h3><i class="fas fa-truck-loading"></i> Currently Active Loads (All Drivers)</h3>
+            <div class="load-table-container">
+                <table id="activeLoadsTable">
+                  <thead>
+                    <tr>
+                      <th style="width: 8%;">Ref No.</th>
+                      <th style="width: 16%;">Route</th>
+                      <th style="width: 9%;">Date</th>
+                      <th style="width: 8%;">Status</th>
+                      <th style="width: 10%;">Driver</th>
+                      <th style="width: 10%;">Sender</th>
+                      <th style="width: 9%;" class="price-col">Price</th>
+                      <th style="width: 10%;">Payment</th>
+                      <th style="width: 20%;">Documents</th>
+                    </tr>
+                  </thead>
+                  <tbody id="activeLoadsTableBody"><tr><td colspan="9">Loading...</td></tr></tbody>
+                </table>
+              </div>
+        </section>
+        <section class="panel">
+          <h3><i class="fas fa-map-marked-alt"></i> Track Specific Shipment</h3>
+          <div class="track-form">
+              <input type="text" id="trackRef" placeholder="Enter UTI-xxxx Number" autocomplete="off">
+              <button id="trackBtn" class="btn">Track</button>
+          </div>
+          <div id="map"></div>
+          <div id="trackInfo">
+            <p><strong>Status:</strong> <span id="trackStatus">--</span></p>
+            <p><strong>Driver:</strong> <span id="trackDriver">--</span> | <strong>Sender:</strong> <span id="trackSender">--</span></p>
+            <p><strong>Price:</strong> <span id="trackPrice">--</span> | <strong>Payment:</strong> <span id="trackPaymentStatus">--</span></p>
+            <p><strong>Docs (Example):</strong> <span id="trackDocs">--</span></p>
+          </div>
+        </section>
+        <section class="panel">
+            <h3><i class="fas fa-history"></i> Recent Completed Loads (All Drivers)</h3>
+             <div class="load-table-container">
+                <table id="completedLoadsTable">
+                  <thead>
+                    <tr>
+                      <th style="width: 8%;">Ref No.</th>
+                      <th style="width: 16%;">Route</th>
+                      <th style="width: 9%;">Date</th>
+                      <th style="width: 8%;">Status</th>
+                      <th style="width: 10%;">Driver</th>
+                      <th style="width: 10%;">Sender</th>
+                      <th style="width: 9%;" class="price-col">Price</th>
+                      <th style="width: 10%;">Payment</th>
+                      <th style="width: 20%;">Documents</th>
+                    </tr>
+                  </thead>
+                  <tbody id="completedLoadsTableBody"><tr><td colspan="9">Loading...</td></tr></tbody>
+                </table>
+              </div>
+        </section>
+    </main>
+    <footer>© 2025 Unified Transport Interface</footer>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='truck_owner.js') }}"></script>
+</body>
+</html>

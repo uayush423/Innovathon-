@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Load Matching | Unified Transport Interface</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <style>
+    /* Styles for the Search Panel (adapt if style.css covers forms) */
+    .load-panel {
+        background: #ffffff; /* White background */
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px 20px;
+        align-items: end;
+        margin-bottom: 30px;
+        border: 1px solid #eee;
+    }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label { margin-bottom: 6px; font-size: 0.9em; color: #495057; font-weight: 500;}
+    .form-group input, .form-group select {
+        padding: 10px;
+        border: 1px solid #ced4da; /* Lighter border */
+        background-color: #fff; /* White background */
+        color: #212529; /* Dark text */
+        border-radius: 4px;
+        font-size: 1em;
+    }
+    .form-group input::placeholder { color: #6c757d; } /* Grey placeholder */
+    .load-panel .btn-primary { grid-column: 1 / -1; } /* Make search button full width */
+
+    /* Table Styles (similar to driver page) */
+     .load-table-container {
+        overflow-x: auto;
+        margin-top: 20px;
+        margin-bottom: 30px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        background-color: #fff;
+        padding: 15px;
+    }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { border: 1px solid #eee; padding: 10px 12px; text-align: left; vertical-align: top; word-wrap: break-word; font-size: 0.9em; color: #333;}
+    th { background-color: #f8f9fa; font-weight: 600; color: #495057; }
+    tr:nth-child(even) { background-color: #fdfdfd; }
+    td ul { margin: 0; padding-left: 18px; font-size: 0.9em; list-style: disc; }
+    td li { margin-bottom: 3px; }
+    .btn-accept { background-color: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s ease; }
+    .btn-accept:hover:not(:disabled) { background-color: #218838; }
+    .btn-accept:disabled { background-color: #aaa; cursor: not-allowed; opacity: 0.7; }
+    .price-col { text-align: right; padding-right: 15px !important; }
+    .action-col { text-align: center; }
+
+    /* Heading Styles */
+     h2 {
+        color: #0d6efd; /* Example blue */
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        font-size: 1.6em;
+    }
+    h2 i { margin-right: 10px; }
+    .available-loads p { color: #6c757d; margin-bottom: 15px; } /* Grey text */
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <h1>Unified Transport Interface</h1>
+      <p>One Nation, One Transportation Network</p>
+    </div>
+    <nav>
+      <a href="{{ url_for('home') }}">Home</a>
+      {% if current_user.is_authenticated %}
+        {% if current_user.role == 'driver' or current_user.role == 'truck_owner' %}
+          <a href="{{ url_for('driver_dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('load_matching') }}" class="active">Load Matching</a>
+          <a href="{{ url_for('smart_route') }}">Smart Route</a>
+        {% elif current_user.role == 'sender' %}
+          <a href="{{ url_for('sender_dashboard') }}">Dashboard</a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}">Logout</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Login</a>
+        <a href="{{ url_for('register_page') }}">Register</a>
+      {% endif %}
+       <a href="{{ url_for('contact') }}">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="load-section">
+      <h2><i class="fas fa-search"></i> Find the Best Load Match</h2>
+      <p style="color: #6c757d;">Enter your trip details to find matching loads instantly.</p>
+
+      <div class="load-panel">
+        <div class="form-group">
+          <label for="origin">Origin</label>
+          <input type="text" id="origin" placeholder="Filter by origin (optional)" autocomplete="address-level2">
+        </div>
+        <div class="form-group">
+          <label for="destination">Destination</label>
+          <input type="text" id="destination" placeholder="Filter by destination (optional)" autocomplete="address-level2">
+        </div>
+
+        <div class="form-group">
+          <label for="truckTypeFilter">Required Truck Type</label>
+          <select id="truckTypeFilter" name="truck_type_filter" autocomplete="off">
+            <option value="">Any Truck Type</option>
+            <option value="LCV (Pickup/Mini)">LCV (Pickup/Mini)</option>
+            <option value="MCV Rigid (6-10 Tyre)">MCV Rigid (6-10 Tyre)</option>
+            <option value="HCV Rigid (Multi-Axle)">HCV Rigid (Multi-Axle)</option>
+            <option value="HCV Tractor-Trailer (Flatbed/Box)">HCV Tractor-Trailer (Flatbed/Box)</option>
+            <option value="HCV Tractor-Trailer (Tipper/Tanker)">HCV Tractor-Trailer (Tipper/Tanker)</option>
+            <option value="Heavy Haulage Trailer">Heavy Haulage Trailer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="weight">Min. Weight (Tons)</label>
+          <input type="number" id="weight" placeholder="Filter by weight (optional)" min="0" step="0.1" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="searchDate">Preferred Date</label>
+          <input type="date" id="searchDate" autocomplete="off">
+        </div>
+        <button class="btn btn-primary" id="searchLoadBtn"><i class="fas fa-search"></i> Search Loads</button>
+      </div>
+    </section>
+
+    <section class="available-loads">
+      <h2>Exact Matches</h2>
+      <p>Loads matching your preferred date. <span style="font-weight: bold; color: #fd7e14;">Verify document requirements independently.</span></p>
+      <div class="load-table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 8%;">Ref No.</th>
+              <th style="width: 18%;">Origin</th>
+              <th style="width: 18%;">Destination</th>
+              <th style="width: 12%;">Req. Truck Type</th>
+              <th style="width: 8%;">Weight</th>
+              <th style="width: 10%;">Date</th>
+              <th style="width: 10%;" class="price-col">Price (Est.)</th>
+              <th style="width: 12%;">Documents (Example)</th>
+              <th style="width: 7%;" class="action-col">Action</th>
+            </tr>
+          </thead>
+          <tbody id="exactMatchTableBody">
+            <tr><td colspan="9">Enter search criteria and click "Search Loads".</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 style="margin-top: 30px;">Other Available Loads</h2>
+      <p>Loads available on other dates. <span style="font-weight: bold; color: #fd7e14;">Verify document requirements independently.</span></p>
+      <div class="load-table-container">
+        <table>
+          <thead>
+            <tr>
+               <th style="width: 8%;">Ref No.</th>
+              <th style="width: 18%;">Origin</th>
+              <th style="width: 18%;">Destination</th>
+              <th style="width: 12%;">Req. Truck Type</th>
+              <th style="width: 8%;">Weight</th>
+              <th style="width: 10%;">Date</th>
+              <th style="width: 10%;" class="price-col">Price (Est.)</th>
+              <th style="width: 12%;">Documents (Example)</th>
+              <th style="width: 7%;" class="action-col">Action</th>
+            </tr>
+          </thead>
+          <tbody id="otherLoadsTableBody">
+             <tr><td colspan="9">No other loads found matching criteria.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 Unified Transport Interface | One Nation, One Transport Network</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("Load matching page DOM loaded.");
+
+        const searchBtn = document.getElementById('searchLoadBtn');
+        const exactTableBody = document.getElementById('exactMatchTableBody');
+        const otherTableBody = document.getElementById('otherLoadsTableBody');
+        const searchDateInput = document.getElementById('searchDate');
+        const truckTypeFilterInput = document.getElementById('truckTypeFilter');
+        const colSpan = 9;
+
+        function formatPrice(price) { return (typeof price === 'number' && !isNaN(price)) ? `₹${price.toFixed(2)}` : 'N/A'; }
+        function formatDocuments(documents) { if (Array.isArray(documents) && documents.length > 0) { return `<ul>${documents.map(doc => `<li>${doc || 'N/A'}</li>`).join('')}</ul>`; } return 'N/A'; }
+
+        function populateTable(tableBody, loads) {
+          if (!tableBody) { console.error("populateTable failed: tableBody element not found."); return; }
+          tableBody.innerHTML = '';
+          if (!Array.isArray(loads) || loads.length === 0) { tableBody.innerHTML = `<tr><td colspan="${colSpan}">No matching loads found.</td></tr>`; return; }
+          loads.forEach(load => {
+            const row = tableBody.insertRow();
+            const priceDisplay = formatPrice(load.price); const documentsHtml = formatDocuments(load.documents);
+            row.insertCell(0).textContent = `UTI-${load.id}`; row.insertCell(1).textContent = load.origin || 'N/A';
+            row.insertCell(2).textContent = load.destination || 'N/A';
+            row.insertCell(3).textContent = load.load_type || 'N/A'; // Req. Truck Type
+            row.insertCell(4).textContent = load.weight ? `${load.weight} T` : 'N/A'; row.insertCell(5).textContent = load.expected_date || 'N/A';
+            const priceCell = row.insertCell(6); priceCell.textContent = priceDisplay; priceCell.classList.add('price-col');
+            row.insertCell(7).innerHTML = documentsHtml;
+            const actionCell = row.insertCell(8); actionCell.classList.add('action-col');
+            actionCell.innerHTML = `<button class="btn-accept" data-id="${load.id}">Request Load</button>`; // Assuming .btn-accept is styled
+          });
+        }
+
+        function fetchLoads() {
+            console.log("Fetching loads...");
+            const currentExactTableBody = document.getElementById('exactMatchTableBody');
+            const currentOtherTableBody = document.getElementById('otherLoadsTableBody');
+            const currentSearchDateInput = document.getElementById('searchDate');
+            const currentTruckTypeFilter = document.getElementById('truckTypeFilter');
+
+            if (!currentExactTableBody || !currentOtherTableBody || !currentSearchDateInput || !currentTruckTypeFilter) {
+                 console.error("Cannot fetch loads: Missing required elements."); return;
+            }
+            const searchDate = currentSearchDateInput.value;
+            const searchTruckType = currentTruckTypeFilter.value;
+
+            currentExactTableBody.innerHTML = `<tr><td colspan="${colSpan}">Searching...</td></tr>`;
+            currentOtherTableBody.innerHTML = `<tr><td colspan="${colSpan}">Searching...</td></tr>`;
+
+            const queryParams = new URLSearchParams();
+            if (searchDate) { queryParams.append('date', searchDate); }
+            if (searchTruckType) { queryParams.append('truck_type', searchTruckType); }
+
+            fetch(`/api/get_loads?${queryParams.toString()}`)
+                .then(response => {
+                    if (!response.ok) { return response.json().then(err => { throw new Error(err.error || `Network error: ${response.statusText}`); }); }
+                    return response.json();
+                })
+                .then(data => {
+                  if (data.error) { throw new Error(data.error); }
+                  console.log("Load data received:", data);
+                  populateTable(currentExactTableBody, data.exact_matches);
+                  populateTable(currentOtherTableBody, data.other_loads);
+                })
+                .catch(error => {
+                  console.error('Error fetching loads:', error);
+                  if (currentExactTableBody) currentExactTableBody.innerHTML = `<tr><td colspan="${colSpan}" style="color: red;">Error: ${error.message}</td></tr>`;
+                  if (currentOtherTableBody) currentOtherTableBody.innerHTML = `<tr><td colspan="${colSpan}" style="color: red;">Could not load other loads.</td></tr>`;
+                });
+        }
+
+        if (searchBtn) { searchBtn.addEventListener('click', fetchLoads); }
+        else { console.error("Initialization Error: Search button ('searchLoadBtn') not found."); }
+
+        document.body.addEventListener('click', function(event) {
+          if (event.target.classList.contains('btn-accept') && event.target.closest('.load-table-container')) {
+            const button = event.target; const loadId = button.dataset.id;
+            const priceText = button.closest('tr')?.cells[6]?.textContent || 'N/A';
+            if (!confirm(`Request this load (Ref: UTI-${loadId})?\nEstimated Price: ${priceText}\n\n(Sender must confirm)`)) { return; }
+            button.disabled = true; button.innerText = 'Requesting...';
+            fetch("/api/request_load", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ load_id: loadId }) })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) { alert('Request sent!'); button.innerText = 'Requested'; }
+              else { alert('Request failed: ' + (data.error || 'Unknown error.')); console.error("API Error:", data.error || data); button.disabled = false; button.innerText = 'Request Load'; }
+            })
+            .catch(error => { console.error('Network Error:', error); alert('A network error occurred.'); button.disabled = false; button.innerText = 'Request Load'; });
+          }
+        });
+
+        if (searchBtn && exactTableBody && otherTableBody && searchDateInput && truckTypeFilterInput) {
+            fetchLoads(); // Trigger search automatically
+        } else {
+            console.error("Initial load failed: Missing required page elements.");
+        }
+
+    }); // End DOMContentLoaded
+  </script>
+</body>
+</html>

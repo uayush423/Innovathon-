@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sender Dashboard | Unified Transport Interface</title>
+
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sender.css') }}">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+
+  <style>
+    #map { height: 400px; border-radius: 10px; margin-top: 20px; }
+    .btn-confirm { background-color: #28a745; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
+    .btn-confirm:hover { background-color: #218838; }
+    .load-table-container table { width: 100%; border-collapse: collapse; table-layout: fixed;}
+    .load-table-container th, .load-table-container td { border: 1px solid #444; padding: 10px; text-align: left; word-wrap: break-word; }
+    .load-table-container th { background-color: #333; }
+    .load-table-container td ul { margin: 0; padding-left: 15px; font-size: 0.9em; }
+
+    /* Column Widths for Requests Table */
+    #driverRequestsTable th:nth-child(1), #driverRequestsTable td:nth-child(1) { width: 10%; } /* Ref */
+    #driverRequestsTable th:nth-child(2), #driverRequestsTable td:nth-child(2) { width: 25%; } /* Route */
+    #driverRequestsTable th:nth-child(3), #driverRequestsTable td:nth-child(3) { width: 15%; } /* Driver */
+    #driverRequestsTable th:nth-child(4), #driverRequestsTable td:nth-child(4) { width: 15%; text-align: right; } /* Price */
+    #driverRequestsTable th:nth-child(5), #driverRequestsTable td:nth-child(5) { width: 25%; } /* Documents */
+    #driverRequestsTable th:nth-child(6), #driverRequestsTable td:nth-child(6) { width: 10%; text-align: center;} /* Action */
+
+    /* Column Widths for History Table */
+     #shipmentHistoryTable th:nth-child(1), #shipmentHistoryTable td:nth-child(1) { width: 10%; } /* Ref */
+     #shipmentHistoryTable th:nth-child(2), #shipmentHistoryTable td:nth-child(2) { width: 25%; } /* Route */
+     #shipmentHistoryTable th:nth-child(3), #shipmentHistoryTable td:nth-child(3) { width: 10%; } /* Date */
+     #shipmentHistoryTable th:nth-child(4), #shipmentHistoryTable td:nth-child(4) { width: 10%; } /* Status */
+     #shipmentHistoryTable th:nth-child(5), #shipmentHistoryTable td:nth-child(5) { width: 15%; } /* Driver */
+     #shipmentHistoryTable th:nth-child(6), #shipmentHistoryTable td:nth-child(6) { width: 10%; text-align: right;} /* Price */
+     #shipmentHistoryTable th:nth-child(7), #shipmentHistoryTable td:nth-child(7) { width: 20%; } /* Documents */
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo"><h1>UTI</h1><p>Unified Transport Interface</p></div>
+    <nav><a href="{{ url_for('sender_dashboard') }}" class="active">Dashboard</a><a href="{{ url_for('contact') }}">Contact</a></nav> <a href="{{ url_for('logout') }}" class="btn-outline" style="text-decoration:none; border-color:white; color:white; padding: 5px 10px; border-radius: 5px;">Logout</a>
+  </header>
+
+  <main>
+    <section class="hero"><h2>Welcome, Sender {{ current_user.username }}</h2><p>Upload goods, manage requests, and track your shipments.</p></section>
+
+    <section class="panel">
+      <h3><i class="fas fa-box-open"></i> Upload Goods Details</h3>
+      <form id="goodsForm" class="upload-form">
+        <div class="form-group"><label>Origin:</label><input type="text" id="origin" placeholder="Pickup location (e.g., City, State)" required list="origin-list" autocomplete="off"><datalist id="origin-list"></datalist></div>
+        <div class="form-group"><label>Destination:</label><input type="text" id="destination" placeholder="Final destination (e.g., City, State)" required list="destination-list" autocomplete="off"><datalist id="destination-list"></datalist></div>
+        <div class="form-group"><label for="loadType">Truck Type:</label><select id="loadType" required><option value="">-- Select --</option><option value="LCVs">LCVs</option><option value="MCVs">MCVs</option><option value="HCVs">HCVs</option><option value="Electronics">Electronics</option><option value="Furniture">Furniture</option><option value="Other">Other</option></select></div>
+        <div class="form-group"><label>Weight (Tons):</label><input type="number" id="weight" placeholder="e.g., 10" required step="0.1"></div>
+        <div class="form-group"><label>Expected Date:</label><input type="date" id="expectedDate" required></div>
+        <button type="submit" class="btn">Upload Data</button>
+      </form>
+      <div id="refDisplay" class="ref-box" style="display: none;"><p>Reference Number:</p><p id="refNumber">UTI-0000</p></div>
+      <div id="priceDisplay" class="ref-box" style="display: none;"><p>Estimated Price:</p><p id="estPrice">₹0.00</p></div>
+    </section>
+
+    <section class="panel">
+      <h3><i class="fas fa-map-marked-alt"></i> Track Your Driver</h3>
+      <p>Enter reference number for live location.</p>
+      <div class="track-form"><input type="text" id="trackRef" placeholder="Enter UTI-xxxx Number"><button id="trackBtn" class="btn btn-outline">Track</button></div>
+      <div id="map"></div>
+      <div id="trackInfo" style="margin-top: 10px; display: none;">
+        <p><strong>Status:</strong> <span id="trackStatus">--</span></p>
+        <p><strong>Driver:</strong> <span id="trackDriver">--</span></p>
+        <p><strong>Price:</strong> <span id="trackPrice">--</span></p>
+        <p><strong>Docs (Example):</strong> <span id="trackDocs">--</span></p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3><i class="fas fa-user-check"></i> Driver Requests</h3>
+      <p>Confirm a driver to assign the trip. <span style="font-weight: bold; color: yellow;">Verify requirements independently.</span></p>
+      <div class="load-table-container">
+        <table id="driverRequestsTable">
+          <thead>
+            <tr>
+              <th>Ref No.</th>
+              <th>Route</th>
+              <th>Driver</th>
+              <th>Price (Est.)</th>
+              <th>Documents (Example)</th> <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="driverRequestsTableBody">
+            <tr><td colspan="6">No pending requests.</td></tr> </tbody>
+        </table>
+      </div>
+    </section>
+
+     <section class="panel">
+      <h3><i class="fas fa-history"></i> Shipment History</h3>
+      <p>Your past shipments.</p>
+      <div class="load-table-container">
+        <table id="shipmentHistoryTable">
+          <thead>
+            <tr>
+              <th>Ref No.</th>
+              <th>Route</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Driver</th>
+              <th>Price (Est.)</th>
+              <th>Documents (Example)</th> </tr>
+          </thead>
+          <tbody id="shipmentHistoryTableBody">
+            <tr><td colspan="7">Loading history...</td></tr> </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3><i class="fas fa-credit-card"></i> Payment History</h3>
+       <div class="load-table-container">
+          <table>
+            <thead><tr><th>Ref No.</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody><tr><td colspan="4">No payment history available.</td></tr></tbody>
+          </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>© 2025 Unified Transport Interface</footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.umd.js"></script>
+  <script src="{{ url_for('static', filename='sender.js') }}"></script>
+</body>
+</html>
+<div class="form-group">
+  <label for="instruction">Special Instructions (Optional)</label>
+  <textarea id="instruction" rows="3" placeholder="Enter any specific instruction for the driver..."></textarea>
+</div>

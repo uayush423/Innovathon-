@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Route Search | Unified Transport Interface</title>
+
+  <!-- Remove favicon if not needed -->
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
+
+  <!-- Your own stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='route.css') }}" />
+
+  <!-- ✅ Load Leaflet core library -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    crossorigin=""
+  ></script>
+
+  <!-- ✅ Load GeoSearch -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.css"
+  />
+  <script
+    src="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.umd.js"
+  ></script>
+
+  <!-- ✅ Load Routing Machine -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"
+  />
+  <script
+    src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"
+  ></script>
+
+  <style>
+    #map {
+      height: 500px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    .leaflet-routing-container {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo">
+      <h1>Unified Transport Interface</h1>
+      <p>One Nation, One Transportation Network</p>
+    </div>
+    <nav>
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('driver_dashboard') }}">Driver</a>
+      <a href="{{ url_for('load_matching') }}">Load Matching</a>
+      <a href="{{ url_for('smart_route') }}" class="active">Smart Route</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="route-section">
+      <h2>Smart Route Finder</h2>
+      <p>
+        Enter your origin and destination to get optimized routes, toll
+        information, and no-entry alerts.
+      </p>
+
+      <div class="route-input">
+        <input
+          type="text"
+          id="origin"
+          placeholder="Enter Origin (e.g., Delhi)"
+          autocomplete="off"
+        />
+        <input
+          type="text"
+          id="destination"
+          placeholder="Enter Destination (e.g., Mumbai)"
+          autocomplete="off"
+        />
+        <button id="routeBtn" class="btn-primary">Find Route</button>
+      </div>
+
+      <div class="route-info">
+        <div class="info-card">
+          <h3>Best Route Suggestion</h3>
+          <p id="routeSuggestion">–</p>
+        </div>
+        <div class="info-card">
+          <h3>Distance & Duration</h3>
+          <p id="distance">–</p>
+        </div>
+        <div class="info-card">
+          <h3>Toll Information</h3>
+          <p id="tolls">–</p>
+        </div>
+        <div class="info-card">
+          <h3>No-Entry Zones</h3>
+          <p id="noEntry">–</p>
+        </div>
+      </div>
+
+      <div id="map"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 Unified Transport Interface | One Nation, One Transport Network</p>
+  </footer>
+
+  <!-- ✅ Load your route.js after libraries -->
+  <script src="{{ url_for('static', filename='route.js') }}"></script>
+</body>
+</html>
