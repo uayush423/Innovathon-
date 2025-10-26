@@ -1,0 +1,20 @@
+innovation_project/
+│
+├── app.py
+├── database.db
+│
+├── templates/
+│   ├── index.html
+│   ├── login.html
+│   ├── register.html
+│   ├── driver.html
+│   ├── sender.html
+│   ├── receiver.html
+│   ├── truck_owner.html
+│   └── contact.html
+│
+└── static/
+    ├── css/
+    │   └── style.css
+    └── js/
+        └── your_scripts.js (optional)

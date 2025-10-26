@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UTI - Unified Transport Interface</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        /* Basic styles if style.css is missing */
+        .fade-in {
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+        }
+        .fade-in.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <h1>UTI</h1>
+      <p>Unified Transport Interface</p>
+    </div>
+    <nav>
+      <a href="{{ url_for('home') }}" >Home</a>
+      <a href="#features">Features</a>
+      <a href="#about">About</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+    </nav>
+    <div class="cta">
+      <a href="{{ url_for('register_page') }}"><button class="btn btn-primary">Join the Network</button></a>
+      <a href="{{ url_for('login') }}"><button class="btn btn-outline">Sign In</button></a>
+    </div>
+  </header>
+
+  <main id="home">
+    <section class="hero fade-in">
+      <h2>One Nation, One Transport Network</h2>
+      <p>
+        UTI unifies India’s transport ecosystem — connecting drivers, owners, senders,
+        and receivers on a single, efficient platform.
+      </p>
+      <a href="{{ url_for('register_page') }}"><button class="btn btn-primary hero-btn">Get Started</button></a>
+    </section>
+
+    <section id="features" class="features fade-in">
+      <h2>Key Features</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3><i class="fas fa-search-location"></i> Smart Load Matching</h3>
+          <p>AI-powered matching connects senders with the right drivers instantly.</p>
+        </div>
+        <div class="feature-card">
+          <h3><i class="fas fa-route"></i> Optimized Routing</h3>
+          <p>Minimize fuel costs and delivery times with intelligent route planning.</p>
+        </div>
+        <div class="feature-card">
+          <h3><i class="fas fa-map-marked-alt"></i> Real-Time Tracking</h3>
+          <p>Monitor shipment progress with live location updates.</p>
+        </div>
+        <div class="feature-card">
+          <h3><i class="fas fa-file-invoice-dollar"></i> Price Estimation</h3>
+          <p>Transparent cost calculation based on distance and load type.</p>
+        </div>
+        <div class="feature-card">
+          <h3><i class="fas fa-microphone-alt"></i> Voice Assistance</h3>
+          <p>Multilingual support for easy communication between drivers and receivers.</p>
+        </div>
+        <div class="feature-card">
+          <h3><i class="fas fa-credit-card"></i> Digital Payments</h3>
+          <p>Secure, UPI-based transactions with automated record-keeping.</p>
+        </div>
+         <div class="feature-card">
+          <h3><i class="fas fa-id-card"></i> Driver Verification</h3>
+          <p>Integrated KYC ensures safety and accountability within the network.</p>
+        </div>
+         <div class="feature-card">
+          <h3><i class="fas fa-users"></i> Role-Based Access</h3>
+          <p>Secure portals tailored for Drivers, Truck Owners, Senders, and Receivers.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="about fade-in">
+      <h2>Our Vision</h2>
+      <p>
+        To build a unified digital infrastructure that powers logistics efficiency, transparency,
+        and data-driven decision-making for the entire nation. UTI bridges the gap between transport
+        operators and government systems for a truly connected India.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 Unified Transport Interface | One Nation, One Transport Network | Designed by Aman Kumar Keshri</p>
+  </footer>
+
+  <script>
+    // Smooth scroll for internal anchor links (#features, #about)
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href');
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+            targetElement.scrollIntoView({
+              behavior: 'smooth' // Enable smooth scrolling
+            });
+        } else {
+            console.warn(`Smooth scroll target not found: ${targetId}`);
+        }
+      });
+    });
+
+    // Simple fade-in animation for elements with class 'fade-in'
+    const faders = document.querySelectorAll('.fade-in');
+    if ("IntersectionObserver" in window) { // Check if IntersectionObserver is supported
+        const appearOptions = {
+          threshold: 0.15, // Trigger when 15% of the element is visible
+          rootMargin: "0px 0px -50px 0px" // Start loading slightly before fully in view
+        };
+        const appearOnScroll = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(entry => {
+            if (!entry.isIntersecting) {
+              return; // Ignore if element is moving out of view
+            } else {
+              entry.target.style.opacity = 1; // Fade in
+              observer.unobserve(entry.target); // Stop observing once faded in
+            }
+          });
+        }, appearOptions);
+
+        faders.forEach(fader => {
+          fader.style.opacity = 0; // Initially hide elements
+          appearOnScroll.observe(fader); // Start observing
+        });
+    } else {
+        // Fallback for older browsers: just show elements immediately
+        faders.forEach(fader => fader.style.opacity = 1);
+    }
+  </script>
+
+</body>
+</html>

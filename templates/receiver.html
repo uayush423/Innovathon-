@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receiver Dashboard | UTI</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="stylesheet" href="{{ url_for('static', filename='sender.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* Styles from previous version */
+        body { background: linear-gradient(to bottom right, #eef, #dde); color: #333; font-family: sans-serif; margin: 0; }
+        header { background: linear-gradient(90deg, #6a11cb, #2575fc); color: white; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 1000;}
+        .logo h1 { margin: 0; font-size: 1.5em; } .logo p { margin: 0; font-size: 0.8em; color: #eee; }
+        nav a { color: white; text-decoration: none; margin: 0 15px; padding: 5px 0; }
+        nav a.active, nav a:hover { border-bottom: 2px solid white; }
+        main { padding: 80px 30px 20px 30px; max-width: 1000px; margin: 0 auto;}
+        footer { text-align: center; padding: 15px; margin-top: 30px; background-color: #ddd; font-size: 0.9em; color: #555; border-top: 1px solid #ccc; }
+        .panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); margin-bottom: 30px; border: 1px solid rgba(0,0,0,0.1); padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .panel h3 { color: #3d0a91; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center;}
+        .panel h3 i { margin-right: 10px; }
+        .search-form { display: flex; gap: 10px; margin-bottom: 25px; }
+        .search-form input { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 1em;}
+        .search-form .btn { padding: 12px 20px; background-color: #6a11cb; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.2s ease;}
+        .search-form .btn:hover { background-color: #50089e; }
+        #shipmentDetails { display: none; } #shipmentDetails h4 { color: #50089e; margin-top: 25px; margin-bottom: 10px; font-size: 1.1em;}
+        #shipmentDetails p { margin: 8px 0; font-size: 1em; line-height: 1.5; color: #444; }
+        #shipmentDetails strong { font-weight: 600; color: #333; min-width: 120px; display: inline-block;}
+        #shipmentDetails ul { margin: 5px 0 10px 25px; padding: 0; font-size: 0.9em; color: #555; list-style: disc;}
+        #map { height: 350px; border-radius: 8px; margin-top: 20px; border: 1px solid #ccc; background-color: #eee; }
+        .payment-section { margin-top: 20px; padding-top: 20px; border-top: 1px dashed #ccc;}
+        .btn-pay { background-color: #28a745; color: white; padding: 10px 20px; font-size: 1em; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.2s ease;}
+        .btn-pay:hover:not(:disabled) { background-color: #218838; } .btn-pay:disabled { background-color: #aaa; cursor: not-allowed; opacity: 0.7; }
+        .paid-status { color: #28a745; font-weight: bold; } .unpaid-status { color: #dc3545; font-weight: bold; }
+        .processing-status { color: #ffc107; font-weight: bold; }
+        #searchStatus { margin-top: 15px; font-style: italic; color: #555; }
+        .btn-outline { background: white; color: #6a11cb; border: 1px solid #6a11cb; padding: 5px 10px; border-radius: 5px; text-decoration: none; cursor: pointer; transition: all 0.2s ease;}
+        .btn-outline:hover { background: #6a11cb; color: white; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo"><h1>UTI</h1><p>Receiver Portal</p></div>
+        <nav>
+            <a href="{{ url_for('receiver_dashboard') }}" class="active">Dashboard</a>
+            <a href="{{ url_for('contact') }}">Support</a>
+        </nav>
+        <a href="{{ url_for('logout') }}" class="btn-outline">Logout</a>
+    </header>
+    <main>
+        <section class="panel">
+            <h3><i class="fas fa-search"></i> Track Your Shipment</h3>
+            <div class="search-form">
+                <input type="text" id="trackRefReceiver" placeholder="Enter UTI-xxxx Reference Number" autocomplete="off">
+                <button id="searchBtnReceiver" class="btn">Search</button>
+            </div>
+            <div id="searchStatus">Enter a reference number to begin.</div>
+        </section>
+        <section id="shipmentDetails" class="panel">
+            <h3><i class="fas fa-box-open"></i> Shipment Details (<span id="detailsRef">UTI-xxxx</span>)</h3>
+            <p><strong>Status:</strong> <span id="detailsStatus">--</span></p>
+            <p><strong>Route:</strong> <span id="detailsOrigin">--</span> <i class="fas fa-long-arrow-alt-right"></i> <span id="detailsDestination">--</span></p>
+            <p><strong>Expected Date:</strong> <span id="detailsDate">--</span></p>
+             <p><strong>Required Truck:</strong> <span id="detailsTruckType">--</span></p>
+
+            <h4><i class="fas fa-user-friends"></i> Involved Parties</h4>
+            <p><strong>Sender:</strong> <span id="detailsSender">--</span></p>
+            <p><strong>Driver:</strong> <span id="detailsDriver">--</span></p>
+
+            <h4><i class="fas fa-file-invoice-dollar"></i> Payment Information</h4>
+             <p><strong>Estimated Price:</strong> <span id="detailsPrice">--</span></p>
+             <p><strong>Payment Status:</strong> <span id="detailsPaymentStatus" class="unpaid-status">--</span></p>
+             <div class="payment-section" id="paymentSection" style="display: none;">
+                 <p id="paymentMessage"></p>
+                <button id="payBtn" class="btn btn-pay" disabled>Mark as Paid (Simulated)</button>
+             </div>
+
+            <h4><i class="fas fa-map-marked-alt"></i> Driver Location</h4>
+            <div id="map"></div>
+
+             <h4><i class="fas fa-file-alt"></i> Documents (Example)</h4>
+             <div id="detailsDocs">N/A</div>
+        </section>
+    </main>
+    <footer>© 2025 Unified Transport Interface</footer>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='receiver.js') }}"></script>
+</body>
+</html>

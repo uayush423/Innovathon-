@@ -1,0 +1,74 @@
+document.addEventListener("DOMContentLoaded", () => {
+  const searchBtn = document.getElementById("searchLoadBtn");
+  const exactTableBody = document.getElementById("exactMatchTableBody");
+
+  function populateTable(loads) {
+    exactTableBody.innerHTML = "";
+    const colSpan = 9;
+
+    if (!Array.isArray(loads) || loads.length === 0) {
+      exactTableBody.innerHTML = `<tr><td colspan="${colSpan}">No matching loads found.</td></tr>`;
+      return;
+    }
+
+    loads.forEach(load => {
+      const row = exactTableBody.insertRow();
+      row.insertCell(0).textContent = `UTI-${load.id}`;
+      row.insertCell(1).textContent = load.origin || "N/A";
+      row.insertCell(2).textContent = load.destination || "N/A";
+      row.insertCell(3).textContent = load.truck_type || "N/A";
+      row.insertCell(4).textContent = load.weight ? `${load.weight} T` : "N/A";
+      row.insertCell(5).textContent = load.expected_date || "N/A";
+      row.insertCell(6).textContent = load.price ? `₹${load.price}` : "N/A";
+      row.insertCell(7).textContent = load.instruction || "N/A";
+
+      const actionCell = row.insertCell(8);
+      actionCell.innerHTML = `<button class="btn-accept" data-id="${load.id}">Request Load</button>`;
+    });
+  }
+
+  if (searchBtn) {
+    searchBtn.addEventListener("click", () => {
+      const origin = document.getElementById("origin").value;
+      const destination = document.getElementById("destination").value;
+      const truckType = document.getElementById("truckType").value;
+      const weight = document.getElementById("weight").value;
+      const date = document.getElementById("date").value;
+
+      exactTableBody.innerHTML = `<tr><td colspan="9">Searching...</td></tr>`;
+
+      fetch(`/api/get_loads?origin=${origin}&destination=${destination}&truckType=${truckType}&weight=${weight}&date=${date}`)
+        .then(res => res.json())
+        .then(data => populateTable(data.exact_matches))
+        .catch(err => {
+          console.error("Error:", err);
+          exactTableBody.innerHTML = `<tr><td colspan="9" style="color:red;">Failed to fetch loads.</td></tr>`;
+        });
+    });
+  }
+
+  document.body.addEventListener("click", (event) => {
+    if (event.target.classList.contains("btn-accept")) {
+      const id = event.target.dataset.id;
+      event.target.disabled = true;
+      event.target.textContent = "Requesting...";
+
+      fetch("/api/request_load", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ load_id: id })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert("Load request sent successfully!");
+            event.target.textContent = "Requested";
+          } else {
+            alert("Request failed.");
+            event.target.disabled = false;
+            event.target.textContent = "Request Load";
+          }
+        });
+    }
+  });
+});

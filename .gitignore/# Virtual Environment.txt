@@ -1,0 +1,24 @@
+# Virtual Environment
+flask_env/
+venv/
+env/
+*.pyc
+
+# Database File
+database.db
+instance/
+
+# Python cache
+__pycache__/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files (add if you use VSCode, PyCharm, etc.)
+.vscode/
+.idea/
+
+# Secrets (if you have a separate secrets file - better to use environment variables)
+# config.py
+# .env
