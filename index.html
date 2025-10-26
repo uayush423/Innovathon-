@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Student Record</title>
+    <link rel="stylesheet" href="student.css">
+</head>
+<body style="background-color: rgb(178, 239 ,241)">
+    <CENTER><h1>Student Management System</h1></CENTER>
+    <table>
+        <tr>
+            <td>
+                <form onsubmit="event.preventDefault();onFormSubmit();" autocomplete="off">
+                <h2>SCIENCE SCHOOL</h2>
+                <h3>Student Form</h3>
+                <div>
+                    <label>Full Name</label>
+                    <label class="validation-error hide" id="userNamevalidationError">:This field is required</label>
+                    <input type="text" name="username" id="username" placeholder="Enter the user Name">
+                </div>
+                <div>
+                    <label>Enrollment No</label>
+                    <label class="validation-error hide" id="rollNovalidationError">:This field is required</label>
+                    <input type="text" name="rollNo" id="rollNo" placeholder="Enter the Enrollment Number">
+                </div>
+                <div>
+                    <label>Student Class</label>
+                    <label class="validation-error hide" id="stdClassvalidationError">:This field is required</label>
+                    <input type="text" name="stdClass" id="stdClass" placeholder="Enter the Student Class">
+                </div>
+                <div>
+                    <label>Telephone Number</label>
+                    <label class="validation-error hide" id="tnumvalidationError">:This field is required</label>
+                    <input type="number" name="tnum" id="tnum" placeholder="Enter the Telephone Number">
+                </div>
+                <div>
+                    <label>Age</label>
+                    <label class="validation-error hide" id="agevalidationError">:This field is required</label>
+                    <input type="number" name="age" id="age" placeholder="Enter the Age">
+                </div>
+                <div class="form-action-buttons">
+                    <input type="submit" value="submit">
+                </div>
+            </form>
+            </td>
+            <td>
+                <table class="image">
+                    <center><img src="student.jpg"</center>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <table class="list" id="stdlist" style="background-color: white;">
+        <thead>
+            <tr>
+                <th>Full Name</th>
+                <th>Enrollment No</th>
+                <th>Class</th>
+                <th>Telephone Number</th>
+                <th>Age</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+...
+</body>
+<script src="student.js"></script>
+</html>
